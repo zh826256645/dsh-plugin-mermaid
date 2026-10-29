@@ -58,10 +58,12 @@ test("a failed local chunk load can be retried", async () => {
 function block(text, language = "mermaid") {
   const attributes = new Map(language ? [["data-code-language", language]] : []);
   const code = { textContent: text, className: "" };
+  const chartAttributes = new Map();
   const chart = {
     viewBox: { baseVal: { width: 420, height: 80 } },
     style: {},
-    getAttribute: () => null,
+    getAttribute: (name) => chartAttributes.get(name) ?? null,
+    setAttribute: (name, value) => chartAttributes.set(name, value),
   };
   const stage = { innerHTML: "", querySelector: () => chart };
   const error = {};
@@ -97,12 +99,21 @@ test("light and dark themes use real host fonts and keep strict security", () =>
     assert.equal(config.theme, "base");
     assert.equal(config.themeVariables.darkMode, theme === "dark");
     assert.match(config.themeVariables.primaryColor, /^#[0-9a-f]{6}$/);
+    assert.match(config.themeCSS, /filter: none !important/);
+    assert.equal(config.flowchart.padding, 16);
+    assert.equal(config.sequence.messageMargin, 30);
   }
   assert.notEqual(client.renderConfig("light").themeVariables.primaryTextColor,
     client.renderConfig("dark").themeVariables.primaryTextColor);
   assert.equal(client.currentTheme(), "light");
   client.setDark(true);
   assert.equal(client.currentTheme(), "dark");
+});
+
+test("inline size control exposes its current fit state", () => {
+  assert.match(source, /sizeBtn\.setAttribute\("aria-pressed", "false"\)/);
+  assert.match(source, /sizeBtn\.setAttribute\("aria-pressed", String\(fit\)\)/);
+  assert.match(source, /\.dsh-mermaid-btn\[aria-pressed="true"\]/);
 });
 
 test("natural SVG dimensions remain readable and scale proportionally", () => {
@@ -124,7 +135,11 @@ test("returning from the viewer restores responsive inline dimensions", () => {
   client.sizeInlineChart(svg);
   assert.equal(svg.style.width, "420px");
   assert.equal(svg.style.height, "auto");
-  assert.equal(svg.style.maxWidth, "");
+  assert.equal(svg.style.maxWidth, "100%");
+  assert.equal(svg.getAttribute("preserveAspectRatio"), "xMidYMid meet");
+  client.sizeInlineChart(svg, true);
+  assert.equal(svg.style.width, "420px");
+  assert.equal(svg.style.maxWidth, "none");
 });
 
 test("explicit non-Mermaid code is not enhanced; declaration fallback still works", () => {
