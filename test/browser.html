@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="zh-CN">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mermaid plugin browser fixtures</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 32px; background: #f4f6f4; color: #242b28; font: 14px/1.6 -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif; }
+  body[data-ds-dark-theme] { background: #141815; color: #e4e7e5; }
+  main { max-width: 1000px; margin: auto; }
+  header { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+  h1 { font-size: 22px; font-weight: 600; }
+  h2 { margin: 32px 0 10px; font-size: 14px; font-weight: 500; }
+  button { cursor: pointer; }
+  [data-code-block-banner] { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 16px; }
+  .actions { display: flex; align-items: center; }
+  pre { overflow: auto; padding: 20px; margin: 0; }
+  @media (max-width: 600px) { body { padding: 12px; } }
+</style>
+<main>
+  <header><h1>Mermaid · Browser Fixtures</h1><button id="theme">切换主题</button></header>
+  <div id="fixtures"></div>
+</main>
+<script>
+  const fixtures = {
+    flowchart: `flowchart LR
+      subgraph client["客户端"]
+        A["用户输入"] --> B{"参数校验"}
+      end
+      B -->|通过| C["任务队列"]
+      B -->|失败| D["提示修正"]
+      C --> E[("数据存储")]
+      E --> F["返回结果"]
+      F -.-> A`,
+    sequence: `sequenceDiagram
+      autonumber
+      participant U as 用户
+      participant A as API 服务
+      participant Q as 任务队列
+      participant D as 数据库
+      U->>A: 提交任务
+      A->>D: 保存请求与幂等键
+      D-->>A: 写入成功
+      A->>Q: 发布任务
+      A-->>U: 返回任务编号
+      Note over Q,D: 后台异步执行
+      Q->>D: 更新执行结果
+      U->>A: 查询进度
+      A-->>U: 返回最新状态`,
+    state: `stateDiagram-v2
+      [*] --> 待处理
+      待处理 --> 执行中: 领取任务
+      执行中 --> 已完成: 成功
+      执行中 --> 待重试: 暂时失败
+      待重试 --> 执行中: 再次领取
+      已完成 --> [*]`,
+    class: `classDiagram
+      class Task {
+        +String id
+        +String status
+        +execute()
+      }
+      class Queue {
+        +enqueue(Task)
+        +dequeue() Task
+      }
+      Queue "1" --> "*" Task : schedules`,
+    er: `erDiagram
+      USER ||--o{ TASK : creates
+      TASK ||--o{ ATTEMPT : contains
+      USER { string id PK }
+      TASK { string id PK }
+      ATTEMPT { int number }`,
+    wide: "flowchart LR\n" + Array.from({ length: 14 }, (_, i) =>
+      `N${i}["处理步骤 ${i + 1}"] --> N${i + 1}["处理步骤 ${i + 2}"]`).join("\n"),
+    tall: "flowchart TD\n" + Array.from({ length: 14 }, (_, i) =>
+      `T${i}["处理步骤 ${i + 1}"] --> T${i + 1}["处理步骤 ${i + 2}"]`).join("\n"),
+    styled: `flowchart LR
+      A["保留作者配色"] --> B["正常节点"]
+      classDef custom fill:#e4f2ff,stroke:#3985b5,color:#163d58
+      class A custom`,
+  };
+  for (const [id, source] of Object.entries(fixtures)) {
+    const heading = document.createElement("h2");
+    heading.textContent = id;
+    const block = document.createElement("div");
+    block.className = "md-code-block";
+    block.id = id;
+    block.setAttribute("data-code-language", "mermaid");
+    block.innerHTML = '<div data-code-block-banner><span class="language">mermaid</span><div class="actions"></div></div><pre><code class="language-mermaid"></code></pre>';
+    block.querySelector("code").textContent = source;
+    document.querySelector("#fixtures").append(heading, block);
+  }
+  document.querySelector("#theme").addEventListener("click", () => {
+    document.body.toggleAttribute("data-ds-dark-theme");
+  });
+  let chunkFactory;
+  const localRequire = {
+    async: (name) => new Promise((resolve, reject) => {
+      if (name !== "./client.mermaid.js") return reject(new Error("Unknown fixture chunk"));
+      const script = document.createElement("script");
+      script.src = "../lib/client.mermaid.js";
+      script.onload = () => {
+        try { resolve(chunkFactory()); } catch (error) { reject(error); }
+      };
+      script.onerror = () => { script.remove(); reject(new Error("Local Mermaid chunk failed to load")); };
+      document.head.appendChild(script);
+    }),
+  };
+  window.__ModuleLoader__ = {
+    load: ({ chunk, factory }) => {
+      if (chunk) chunkFactory = factory;
+      else factory(localRequire).apply({});
+    },
+  };
+</script>
+<script src="../lib/client.js"></script>
+</html>

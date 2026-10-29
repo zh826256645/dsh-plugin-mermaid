@@ -26,7 +26,7 @@ fi
 
 echo "→ Copying plugin to $TARGET_DIR"
 mkdir -p "$TARGET_DIR"
-cp -R "$SCRIPT_DIR/package.json" "$SCRIPT_DIR/lib" "$SCRIPT_DIR/cordis.patch.yml" "$TARGET_DIR/"
+cp -R "$SCRIPT_DIR/package.json" "$SCRIPT_DIR/lib" "$SCRIPT_DIR/vendor" "$SCRIPT_DIR/cordis.patch.yml" "$TARGET_DIR/"
 
 # DSH requires this user patch file to parse as a top-level YAML array. A
 # comment-only file (for example, after manually deleting a previous entry) is

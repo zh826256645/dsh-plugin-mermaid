@@ -5,6 +5,10 @@
   "type": "module",
   "private": false,
   "license": "MIT",
+  "scripts": {
+    "test": "node --test",
+    "vendor:mermaid": "node scripts/vendor-mermaid.mjs"
+  },
   "main": "lib/index.js",
   "exports": {
     ".": "./lib/index.js",
@@ -13,6 +17,8 @@
   },
   "files": [
     "lib",
+    "vendor",
+    "scripts/vendor-mermaid.mjs",
     "cordis.patch.yml",
     "install.sh",
     "README.md"
